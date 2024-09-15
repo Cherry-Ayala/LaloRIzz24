@@ -24,12 +24,14 @@ def process_video(model, video_path):
         if not success:
             break
         
-        results = model.track(frame, persist=True)
+        results = model.track(frame, persist=True, classes=[0])  # 0 is the class index for person
         
         if results[0].boxes.id is not None:
             boxes = results[0].boxes.xywh.cpu()
             track_ids = results[0].boxes.id.int().cpu().tolist()
-            annotated_frame = results[0].plot()
+            
+            # Create a copy of the frame to draw on
+            annotated_frame = frame.copy()
             
             for box, track_id in zip(boxes, track_ids):
                 x, y, w, h = box
@@ -38,8 +40,12 @@ def process_video(model, video_path):
                 if len(track) > 30:
                     track.pop(0)
                 
+                # Draw bounding box
+                cv2.rectangle(annotated_frame, (int(x-w/2), int(y-h/2)), (int(x+w/2), int(y+h/2)), (0, 255, 0), 2)
+                
+                # Draw tracking lines
                 points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
-                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=10)
+                cv2.polylines(annotated_frame, [points], isClosed=False, color=(230, 230, 230), thickness=2)
                 
                 df = pd.concat([df, pd.DataFrame({'x': [float(x)], 'y': [float(y)]})], ignore_index=True)
             
@@ -51,10 +57,9 @@ def process_video(model, video_path):
             sns.kdeplot(data=df, x="x", y="y", cmap="YlOrRd", fill=True, cbar=True, ax=ax)
             ax.set_xlim(0, frame_width)
             ax.set_ylim(frame_height, 0)
-            ax.set_title("Real-time Heatmap of Detections")
+            ax.set_title("Real-time Heatmap of Person Detections")
             heatmap_placeholder.pyplot(fig)
             plt.close(fig)
-        
         else:
             video_placeholder.image(frame, channels="BGR", use_column_width=True)
     
@@ -62,7 +67,7 @@ def process_video(model, video_path):
 
 # Streamlit app
 def main():
-    st.title("YOLOv8 Video Tracking with Real-time Heatmap")
+    st.title("YOLOv8 Person Tracking with Real-time Heatmap")
     
     # Load the YOLOv8 model
     @st.cache_resource
