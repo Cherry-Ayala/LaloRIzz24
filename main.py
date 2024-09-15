@@ -10,7 +10,7 @@ model = YOLO("yolov8n.pt")
 
 # Open the video file
 video_path = "Prueba.mp4"
-cap = cv2.VideoCapture(video_path)
+cap = cv2.VideoCapture(0)
 
 # Store the track history
 track_history = defaultdict(lambda: [])
