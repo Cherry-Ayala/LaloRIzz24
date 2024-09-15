@@ -5,7 +5,6 @@ import openvino as ov
 
 import collections
 import time
-from IPython import display
 import cv2
 import numpy as np
 
